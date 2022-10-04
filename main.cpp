@@ -9,6 +9,8 @@
 #include <fstream>
 #include <omp.h>
 #include <assert.h>
+#include <cstdlib>
+#include <unistd.h>
 
 using namespace std;
 
@@ -23,17 +25,11 @@ int **needleman_wunsch(string &str1, string &str2, int match_penalty, int mismat
     for (int i = 0; i <= m; i++)
         dp[i] = new int[n + 1];
 
-    double gflops = 6 * m * n;
-
-    struct timeval t;
-
     if (m < n)
     {
         swap(m, n);
         swap(str1, str2);
     }
-
-    cout << str1 << "  " << str2 << endl;
 
     // Fill the first row and column with gap penalties
 #pragma omp parallel for
@@ -43,6 +39,8 @@ int **needleman_wunsch(string &str1, string &str2, int match_penalty, int mismat
 #pragma omp parallel for
     for (int i = 0; i <= n; i++)
         dp[0][i] = i * gap_penalty;
+    // End fill
+
 
     for (int i = 1; i <= n; i++)
     {
@@ -81,19 +79,29 @@ int **needleman_wunsch(string &str1, string &str2, int match_penalty, int mismat
             dp[i + j][n - j] = max(max(gap_A, gap_B), diagonal_value);
         }
     }
+cout<<endl;
+cout<<"------------------------------"<<endl;
 
     for (int i = 0; i <= m; i++)
     {
         for (int j = 0; j <= n; j++)
         {
-            cout << dp[i][j] << " ";
-            fout << dp[i][j] << " ";
+             
+            if (dp[i][j])
+            {
+                fout << dp[i][j] << " ";
+                cout << dp[i][j] << " ";
+           }
+            else{
+                fout <<"0"<< " ";
+                cout <<"-0" << " ";
+            }
         }
         cout << endl;
         fout << "\n";
     }
     fout << "\n";
-    fout << "SCORE: "<<dp[m][n] << " ";
+    fout << "SCORE: " << dp[m][n] << " ";
 
     return dp;
 }
@@ -103,8 +111,6 @@ int main()
 
     string A = "AAAC";
     string B = "AGC";
-
-    cout << A << "  " << B << endl;
 
     int match_penalty = 1, mismatch_penalty = -1, gap_penalty = -2;
     int **matriz = needleman_wunsch(A, B, match_penalty, mismatch_penalty, gap_penalty);
